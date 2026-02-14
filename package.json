@@ -1,0 +1,13 @@
+{
+  "name": "monthly-expense",
+  "version": "1.0.0",
+  "description": "Monthly expense tracker — Angular + Express + MongoDB",
+  "private": true,
+  "scripts": {
+    "client": "cd client && ng serve",
+    "server": "cd server && npm run dev",
+    "build:client": "cd client && ng build",
+    "build:server": "cd server && npm run build",
+    "install:all": "cd client && npm install && cd ../server && npm install"
+  }
+}
