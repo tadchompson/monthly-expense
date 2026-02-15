@@ -1,0 +1,43 @@
+<h2>Spending Summary</h2>
+
+<div class="filters">
+  <select [ngModel]="selectedMonth()" (ngModelChange)="selectedMonth.set($event); onFilterChange()">
+    @for (m of months; track m.value) {
+      <option [ngValue]="m.value">{{ m.label }}</option>
+    }
+  </select>
+
+  <select [ngModel]="selectedYear()" (ngModelChange)="selectedYear.set($event); onFilterChange()">
+    @for (y of years; track y) {
+      <option [ngValue]="y">{{ y }}</option>
+    }
+  </select>
+</div>
+
+@if (summary().length === 0) {
+  <p class="empty">No data for this period.</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Transactions</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (cat of summary(); track cat._id) {
+        <tr>
+          <td>{{ cat._id }}</td>
+          <td>{{ cat.count }}</td>
+          <td class="amount">{{ cat.total | currency }}</td>
+        </tr>
+      }
+      <tr class="grand-total">
+        <td><strong>Grand Total</strong></td>
+        <td></td>
+        <td class="amount"><strong>{{ grandTotal() | currency }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+}
