@@ -9,7 +9,7 @@
     "build:client": "cd client && ng build",
     "build:server": "cd server && npm run build",
     "install:all": "cd client && npm install && cd ../server && npm install",
-    "test:client": "cd client && ng test --watch=false",
+    "test:client": "cd client && npm test -- --watch=false",
     "test:server": "cd server && npm test",
     "test": "npm run test:server && npm run test:client"
   }
