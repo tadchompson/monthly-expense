@@ -8,6 +8,7 @@ export interface IExpense extends Document {
   merchant: string;
   cardLast4?: string;
   uploadBatchId: string;
+  type: 'expense' | 'income';
 }
 
 const expenseSchema = new Schema<IExpense>(
@@ -19,6 +20,7 @@ const expenseSchema = new Schema<IExpense>(
     merchant: { type: String, default: '' },
     cardLast4: { type: String },
     uploadBatchId: { type: String, required: true },
+    type: { type: String, enum: ['expense', 'income'], default: 'expense' },
   },
   { timestamps: true }
 );

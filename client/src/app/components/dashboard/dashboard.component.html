@@ -1,0 +1,139 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h1>Year in Review</h1>
+    <select [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
+      @for (year of availableYears(); track year) {
+        <option [value]="year">{{ year }}</option>
+      }
+    </select>
+  </div>
+
+  @if (loading()) {
+    <p class="loading">Loading dashboard...</p>
+  } @else if (data(); as d) {
+    @if (d.transactionCount === 0 && d.incomeTotal === 0) {
+      <div class="empty-state">
+        <p>No data for {{ selectedYear() }}.</p>
+        <p>Upload a Chase CSV or add manual entries to get started.</p>
+      </div>
+    } @else {
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Spent</span>
+          <span class="stat-value">{{ d.yearTotal | currency }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Income</span>
+          <span class="stat-value income">{{ d.incomeTotal | currency }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Net Balance</span>
+          <span class="stat-value" [class.positive]="d.netBalance >= 0" [class.negative]="d.netBalance < 0">
+            {{ d.netBalance | currency }}
+          </span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Avg Monthly</span>
+          <span class="stat-value">{{ d.avgMonthly | currency }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Subscriptions</span>
+          <span class="stat-value">{{ d.subscriptionTotal | currency }}</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Months</span>
+          <span class="stat-value">{{ d.monthsUploaded }} of 12</span>
+        </div>
+      </div>
+
+      <!-- Monthly Trend Chart -->
+      <div class="panel">
+        <h2>Monthly Income vs Expenses</h2>
+        <div echarts [options]="trendChartOption()" (chartClick)="onChartClick($event)" class="chart"></div>
+      </div>
+
+      @if (selectedMonth()) {
+        <div class="month-filter-banner">
+          <span>Viewing: <strong>{{ selectedMonthName() }} {{ selectedYear() }}</strong></span>
+          <button (click)="clearMonthFilter()">Clear Filter</button>
+        </div>
+      }
+
+      <!-- Category + Merchants Row -->
+      <div class="two-col">
+        <div class="panel">
+          <h2>Category Breakdown</h2>
+          <div echarts [options]="categoryChartOption()" class="chart chart-sm"></div>
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Total</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cat of d.categoryBreakdown; track cat.category) {
+                <tr>
+                  <td>{{ cat.category }}</td>
+                  <td>{{ cat.total | currency }}</td>
+                  <td>{{ (cat.total / d.yearTotal * 100).toFixed(1) }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Top Merchants</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Merchant</th>
+                <th>Total</th>
+                <th>Txns</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of d.topMerchants; track m.merchant; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ m.merchant }}</td>
+                  <td>{{ m.total | currency }}</td>
+                  <td>{{ m.count }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Largest Transactions -->
+      <div class="panel">
+        <h2>Largest Transactions</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of d.largestTransactions; track t._id) {
+              <tr>
+                <td>{{ t.date | date:'shortDate' }}</td>
+                <td>{{ t.description }}</td>
+                <td>{{ t.category }}</td>
+                <td>{{ t.amount | currency }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

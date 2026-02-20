@@ -1,0 +1,80 @@
+<h2>Upload CSV</h2>
+
+<div class="upload-area">
+  <input type="file" accept=".csv" (change)="onFileChange($event)" />
+  <button (click)="upload()" [disabled]="!selectedFile() || uploading()">
+    {{ uploading() ? 'Uploading...' : 'Upload' }}
+  </button>
+</div>
+
+@if (message()) {
+  <p [class.success]="!error()" [class.error]="error()">{{ message() }}</p>
+}
+
+<hr />
+
+<h2>Manual Entry</h2>
+
+<div class="manual-form">
+  <div class="form-row">
+    <label>
+      Category
+      <select [ngModel]="manualCategory()" (ngModelChange)="manualCategory.set($event)">
+        @for (cat of categories; track cat.label) {
+          <option [value]="cat.label">{{ cat.label }} ({{ cat.type }})</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Description
+      @if (descriptionOptions().length > 0 && !useCustomDescription()) {
+        <select [ngModel]="manualDescription()" (ngModelChange)="$event === '__custom__' ? switchToCustomDescription() : manualDescription.set($event)">
+          <option value="" disabled>Select...</option>
+          @for (opt of descriptionOptions(); track opt) {
+            <option [value]="opt">{{ opt }}</option>
+          }
+          <option value="__custom__">Custom...</option>
+        </select>
+      } @else {
+        <input type="text" placeholder="e.g. Weekly paycheck" [ngModel]="manualDescription()" (ngModelChange)="manualDescription.set($event)" />
+        @if (descriptionOptions().length > 0) {
+          <a class="preset-link" (click)="useCustomDescription.set(false); manualDescription.set('')">Use presets</a>
+        }
+      }
+    </label>
+  </div>
+
+  <div class="form-row">
+    <label>
+      Amount
+      <input type="number" min="0" step="0.01" placeholder="0.00" [ngModel]="manualAmount()" (ngModelChange)="manualAmount.set($event)" />
+    </label>
+
+    <label>
+      Month
+      <select [ngModel]="manualMonth()" (ngModelChange)="manualMonth.set(+$event)">
+        @for (m of months; track m.value) {
+          <option [value]="m.value">{{ m.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Year
+      <select [ngModel]="manualYear()" (ngModelChange)="manualYear.set(+$event)">
+        @for (y of years; track y) {
+          <option [value]="y">{{ y }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <button class="submit-btn" (click)="submitManualEntry()" [disabled]="manualSubmitting() || !manualDescription() || !manualAmount()">
+    {{ manualSubmitting() ? 'Adding...' : 'Add Entry' }}
+  </button>
+</div>
+
+@if (manualMessage()) {
+  <p [class.success]="!manualError()" [class.error]="manualError()">{{ manualMessage() }}</p>
+}
