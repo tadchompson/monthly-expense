@@ -53,6 +53,16 @@
   gap: 0.25rem;
 }
 
+.stat-card.clickable {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+  }
+}
+
 .stat-label {
   font-size: 0.8rem;
   text-transform: uppercase;

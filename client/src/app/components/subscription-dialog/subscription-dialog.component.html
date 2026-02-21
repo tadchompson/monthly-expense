@@ -1,0 +1,78 @@
+<div class="dialog-backdrop" (click)="onBackdropClick($event)">
+  <div class="dialog">
+    <div class="dialog-header">
+      <h2>Subscription Details</h2>
+      <button class="close-btn" (click)="close()">&times;</button>
+    </div>
+
+    @if (loading()) {
+      <p class="loading">Loading subscriptions...</p>
+    } @else {
+      <div class="dialog-body">
+        <!-- Active subscriptions -->
+        @if (groups().length > 0) {
+          <div class="section">
+            <h3>Active Subscriptions</h3>
+            @for (group of groups(); track group.key) {
+              <div class="sub-group">
+                <div class="sub-row" (click)="toggleExpand(group.key)">
+                  <span class="expand-icon">{{ isExpanded(group.key) ? '▼' : '▶' }}</span>
+                  <span class="sub-label">{{ group.label }}</span>
+                  <span class="sub-count">{{ group.transactions.length }} txn{{ group.transactions.length !== 1 ? 's' : '' }}</span>
+                  <span class="sub-total">{{ group.total | currency }}</span>
+                </div>
+                @if (isExpanded(group.key)) {
+                  <div class="sub-details">
+                    @for (txn of group.transactions; track txn._id) {
+                      <div class="txn-row">
+                        <span class="txn-date">{{ txn.date | date:'shortDate' }}</span>
+                        <span class="txn-desc">{{ txn.description }}</span>
+                        <span class="txn-amount">{{ txn.amount | currency }}</span>
+                        @if (editingTxnId() !== txn._id) {
+                          <button class="exclude-btn" (click)="startExclude(txn, group)">Exclude</button>
+                        }
+                      </div>
+                      @if (editingTxnId() === txn._id) {
+                        <div class="exclude-editor">
+                          <label>Exclude transactions containing:</label>
+                          <input
+                            type="text"
+                            [(ngModel)]="editingPattern"
+                            (keydown.enter)="confirmExclude()"
+                            (keydown.escape)="cancelExclude()"
+                          />
+                          <div class="exclude-actions">
+                            <button class="confirm-btn" (click)="confirmExclude()" [disabled]="!editingPattern().trim()">Confirm</button>
+                            <button class="cancel-btn" (click)="cancelExclude()">Cancel</button>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty">No active subscriptions found for this period.</p>
+        }
+
+        <!-- Excluded patterns -->
+        @if (exclusions().length > 0) {
+          <div class="section excluded-section">
+            <h3>Excluded</h3>
+            @for (ex of exclusions(); track ex._id) {
+              <div class="excluded-row">
+                <div class="excluded-info">
+                  <span class="excluded-label">{{ ex.label }}</span>
+                  <span class="excluded-desc">contains "{{ ex.description }}"</span>
+                </div>
+                <button class="reinclude-btn" (click)="reinclude(ex)">Re-include</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

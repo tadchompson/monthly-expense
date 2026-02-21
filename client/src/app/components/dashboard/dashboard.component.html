@@ -37,7 +37,7 @@
           <span class="stat-label">Avg Monthly</span>
           <span class="stat-value">{{ d.avgMonthly | currency }}</span>
         </div>
-        <div class="stat-card">
+        <div class="stat-card clickable" (click)="openSubscriptionDialog()">
           <span class="stat-label">Subscriptions</span>
           <span class="stat-value">{{ d.subscriptionTotal | currency }}</span>
         </div>
@@ -135,5 +135,13 @@
         </table>
       </div>
     }
+  }
+
+  @if (showSubscriptionDialog()) {
+    <app-subscription-dialog
+      [year]="selectedYear()"
+      [month]="selectedMonth()"
+      (closed)="onSubscriptionDialogClosed($event)"
+    />
   }
 </div>

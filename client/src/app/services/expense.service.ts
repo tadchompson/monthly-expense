@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Expense, CategorySummary, UploadResponse, DashboardData, ManualEntry } from '../models/expense.model';
+import { Expense, CategorySummary, UploadResponse, DashboardData, ManualEntry, SubscriptionGroup, SubscriptionExclusion } from '../models/expense.model';
 
 @Injectable({ providedIn: 'root' })
 export class ExpenseService {
@@ -51,5 +51,26 @@ export class ExpenseService {
 
   getLatestPeriod() {
     return this.http.get<{ month: number; year: number }>(`${this.base}/latest-period`);
+  }
+
+  // Subscription endpoints
+  private subBase = '/api/subscriptions';
+
+  getSubscriptionTransactions(year: number, month?: number | null) {
+    let params = new HttpParams().set('year', year);
+    if (month) params = params.set('month', month);
+    return this.http.get<SubscriptionGroup[]>(`${this.subBase}/transactions`, { params });
+  }
+
+  getSubscriptionExclusions() {
+    return this.http.get<SubscriptionExclusion[]>(`${this.subBase}/exclusions`);
+  }
+
+  addSubscriptionExclusion(description: string, patternKey: string, label: string) {
+    return this.http.post<SubscriptionExclusion>(`${this.subBase}/exclusions`, { description, patternKey, label });
+  }
+
+  removeSubscriptionExclusion(id: string) {
+    return this.http.delete<{ message: string }>(`${this.subBase}/exclusions/${id}`);
   }
 }

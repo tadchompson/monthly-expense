@@ -3,7 +3,8 @@ import multer from 'multer';
 import crypto from 'crypto';
 import { Expense } from '../models/expense.model';
 import { parseCsv } from '../services/csv-parser.service';
-import { SUBSCRIPTION_REGEX } from '../services/subscription.service';
+import { SUBSCRIPTION_REGEX, buildExclusionRegex } from '../services/subscription.service';
+import { SubscriptionExclusion } from '../models/subscription-exclusion.model';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -166,6 +167,10 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     const filteredExpenseMatch = { ...filteredDateMatch, type: { $ne: 'income' } };
     const filteredIncomeMatch = { ...filteredDateMatch, type: 'income' };
 
+    // Fetch subscription exclusions (contains matching)
+    const exclusions = await SubscriptionExclusion.find().lean();
+    const exclusionRegex = buildExclusionRegex(exclusions.map((e) => e.description));
+
     const [monthlyTrend, categoryBreakdown, topMerchants, largestTransactions, monthlyIncome, subscriptionAgg] = await Promise.all([
       // Always full year for chart
       Expense.aggregate([
@@ -214,18 +219,22 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         },
         { $sort: { _id: 1 } },
       ]),
-      // Subscription total — match common subscription services by description
-      Expense.aggregate([
-        {
-          $match: {
-            ...filteredExpenseMatch,
-            description: {
-              $regex: SUBSCRIPTION_REGEX,
-            },
-          },
-        },
-        { $group: { _id: null, total: { $sum: '$amount' } } },
-      ]),
+      // Subscription total — match common subscription services by description (respects exclusions)
+      (() => {
+        const subMatch: Record<string, unknown> = { ...filteredExpenseMatch };
+        if (exclusionRegex) {
+          subMatch.$and = [
+            { description: { $regex: SUBSCRIPTION_REGEX } },
+            { description: { $not: exclusionRegex } },
+          ];
+        } else {
+          subMatch.description = { $regex: SUBSCRIPTION_REGEX };
+        }
+        return Expense.aggregate([
+          { $match: subMatch },
+          { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]);
+      })(),
     ]);
 
     // Stats use filtered data when month is set, full year otherwise
