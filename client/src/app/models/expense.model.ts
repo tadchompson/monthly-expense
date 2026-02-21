@@ -55,6 +55,20 @@ export interface MonthlyIncome {
   total: number;
 }
 
+export interface SubscriptionGroup {
+  key: string;
+  label: string;
+  transactions: Expense[];
+  total: number;
+}
+
+export interface SubscriptionExclusion {
+  _id: string;
+  description: string;
+  patternKey: string;
+  label: string;
+}
+
 export interface DashboardData {
   yearTotal: number;
   avgMonthly: number;

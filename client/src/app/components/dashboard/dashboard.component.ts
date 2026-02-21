@@ -5,6 +5,7 @@ import { NgxEchartsDirective } from 'ngx-echarts';
 import { EChartsOption } from 'echarts';
 import { ExpenseService } from '../../services/expense.service';
 import { DashboardData } from '../../models/expense.model';
+import { SubscriptionDialogComponent } from '../subscription-dialog/subscription-dialog.component';
 
 const MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -18,7 +19,7 @@ const MONTH_FULL_NAMES = [
 
 @Component({
   selector: 'app-dashboard',
-  imports: [FormsModule, CurrencyPipe, DatePipe, NgxEchartsDirective],
+  imports: [FormsModule, CurrencyPipe, DatePipe, NgxEchartsDirective, SubscriptionDialogComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -30,6 +31,7 @@ export class DashboardComponent implements OnInit {
   selectedMonth = signal<number | null>(null);
   availableYears = signal<number[]>([]);
   loading = signal(false);
+  showSubscriptionDialog = signal(false);
 
   selectedMonthName = computed(() => {
     const m = this.selectedMonth();
@@ -149,5 +151,16 @@ export class DashboardComponent implements OnInit {
   clearMonthFilter() {
     this.selectedMonth.set(null);
     this.loadDashboard();
+  }
+
+  openSubscriptionDialog() {
+    this.showSubscriptionDialog.set(true);
+  }
+
+  onSubscriptionDialogClosed(dataChanged: boolean) {
+    this.showSubscriptionDialog.set(false);
+    if (dataChanged) {
+      this.loadDashboard();
+    }
   }
 }

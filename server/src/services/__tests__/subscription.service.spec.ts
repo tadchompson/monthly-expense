@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSubscription } from '../subscription.service';
+import { isSubscription, matchSubscription, buildSubscriptionRegex, buildExclusionRegex, escapeRegex, SUBSCRIPTION_PATTERNS } from '../subscription.service';
 
 describe('isSubscription', () => {
   describe('streaming services', () => {
@@ -138,5 +138,116 @@ describe('isSubscription', () => {
     ])('should NOT match "%s"', (desc) => {
       expect(isSubscription(desc)).toBe(false);
     });
+  });
+});
+
+describe('matchSubscription', () => {
+  it('returns the correct key for Netflix', () => {
+    expect(matchSubscription('NETFLIX.COM')).toBe('netflix');
+  });
+
+  it('returns the correct key for Spotify', () => {
+    expect(matchSubscription('SPOTIFY USA')).toBe('spotify');
+  });
+
+  it('returns the correct key for ChatGPT', () => {
+    expect(matchSubscription('CHATGPT PLUS')).toBe('chatgpt');
+  });
+
+  it('returns the correct key for Planet Fitness', () => {
+    expect(matchSubscription('PLANET FITNESS')).toBe('planet_fitness');
+  });
+
+  it('returns the correct key for Xbox Game Pass', () => {
+    expect(matchSubscription('XBOX GAME PASS ULTIMATE')).toBe('xbox');
+  });
+
+  it('returns null for non-subscription descriptions', () => {
+    expect(matchSubscription('WALMART SUPERCENTER #1234')).toBeNull();
+    expect(matchSubscription('UBER TRIP')).toBeNull();
+    expect(matchSubscription('TARGET STORE')).toBeNull();
+  });
+});
+
+describe('buildSubscriptionRegex', () => {
+  it('builds a regex that matches all patterns when no exclusions', () => {
+    const regex = buildSubscriptionRegex([]);
+    expect(regex).not.toBeNull();
+    expect(regex!.test('NETFLIX.COM')).toBe(true);
+    expect(regex!.test('SPOTIFY USA')).toBe(true);
+    expect(regex!.test('PLANET FITNESS')).toBe(true);
+  });
+
+  it('excludes specified keys from the regex', () => {
+    const regex = buildSubscriptionRegex(['netflix', 'spotify']);
+    expect(regex).not.toBeNull();
+    expect(regex!.test('NETFLIX.COM')).toBe(false);
+    expect(regex!.test('SPOTIFY USA')).toBe(false);
+    // Other patterns still work
+    expect(regex!.test('HULU *MONTHLY')).toBe(true);
+    expect(regex!.test('PLANET FITNESS')).toBe(true);
+  });
+
+  it('returns null when all patterns are excluded', () => {
+    const allKeys = SUBSCRIPTION_PATTERNS.map((p) => p.key);
+    const regex = buildSubscriptionRegex(allKeys);
+    expect(regex).toBeNull();
+  });
+
+  it('ignores unknown keys in the exclusion list', () => {
+    const regex = buildSubscriptionRegex(['unknown_service', 'fake_key']);
+    expect(regex).not.toBeNull();
+    expect(regex!.test('NETFLIX.COM')).toBe(true);
+  });
+});
+
+describe('escapeRegex', () => {
+  it('escapes special regex characters', () => {
+    expect(escapeRegex('DISNEY+')).toBe('DISNEY\\+');
+    expect(escapeRegex('AMAZON PRIME*Y10JS')).toBe('AMAZON PRIME\\*Y10JS');
+    expect(escapeRegex('BJ\'S CLUB')).toBe('BJ\'S CLUB');
+    expect(escapeRegex('test.com')).toBe('test\\.com');
+  });
+
+  it('leaves plain text unchanged', () => {
+    expect(escapeRegex('NETFLIX')).toBe('NETFLIX');
+    expect(escapeRegex('PLANET FITNESS')).toBe('PLANET FITNESS');
+  });
+});
+
+describe('buildExclusionRegex', () => {
+  it('returns null for empty array', () => {
+    expect(buildExclusionRegex([])).toBeNull();
+  });
+
+  it('builds a case-insensitive contains regex', () => {
+    const regex = buildExclusionRegex(['AMAZON PRIME']);
+    expect(regex).not.toBeNull();
+    expect(regex!.test('AMAZON PRIME*Y10JS3503')).toBe(true);
+    expect(regex!.test('AMAZON PRIME*G23TS2304')).toBe(true);
+    expect(regex!.test('amazon prime membership')).toBe(true);
+    expect(regex!.test('NETFLIX.COM')).toBe(false);
+  });
+
+  it('handles multiple exclusion patterns', () => {
+    const regex = buildExclusionRegex(['AMAZON PRIME', 'PLANET FITNESS']);
+    expect(regex).not.toBeNull();
+    expect(regex!.test('AMAZON PRIME*Y10JS3503')).toBe(true);
+    expect(regex!.test('PLANET FITNESS #1234')).toBe(true);
+    expect(regex!.test('NETFLIX.COM')).toBe(false);
+  });
+
+  it('escapes special characters in patterns', () => {
+    const regex = buildExclusionRegex(['DISNEY+']);
+    expect(regex).not.toBeNull();
+    // Should match literal "DISNEY+" not "DISNEY" followed by anything
+    expect(regex!.test('DISNEY+ MONTHLY')).toBe(true);
+    expect(regex!.test('DISNEY PLUS')).toBe(false);
+  });
+
+  it('does not exclude unrelated descriptions', () => {
+    const regex = buildExclusionRegex(['GOOGLE *YouTubePremium']);
+    expect(regex!.test('GOOGLE *YouTubePremium')).toBe(true);
+    expect(regex!.test('GOOGLE *Reverse 1999')).toBe(false);
   });
 });
